@@ -11,6 +11,7 @@ load_dotenv()
 
 app = FastAPI()
 
+ENDPOINT = ("/api/")
 SECRET_ADMIN_PASSWORD = os.getenv("SECRET_ADMIN_PASSWORD")
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
@@ -52,7 +53,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 # ------------- РОУТЫ
 
-@app.get("/news")  # публичный, без защиты
+@app.get(ENDPOINT + "news")  # публичный, без защиты
 def get_news():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
@@ -62,14 +63,14 @@ def get_news():
     conn.close()
     return [{"id": r["id"], "title": r["title"], "text": r["content"], "date": r["date"]} for r in rows]
 
-@app.post("/check_password")  # публичный, возвращает токен
+@app.post(ENDPOINT + "check_password")  # публичный, возвращает токен
 async def verify_password(data: PasswordRequest):
     if data.password == SECRET_ADMIN_PASSWORD:
         token = create_token()
         return {"status": "ok", "token": token}  # отдаём токен фронту
     raise HTTPException(status_code=403, detail="нахуй")
 
-@app.post("/news", dependencies=[Depends(verify_token)])  # ЗАЩИЩЁН
+@app.post(ENDPOINT + "news", dependencies=[Depends(verify_token)])  # ЗАЩИЩЁН
 def add_news(item: NewsItem):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
@@ -81,7 +82,7 @@ def add_news(item: NewsItem):
     conn.close()
     return {"status": "success"}
 
-@app.delete("/news/{news_id}", dependencies=[Depends(verify_token)])  # ЗАЩИЩЁН
+@app.delete(ENDPOINT + "news/{news_id}", dependencies=[Depends(verify_token)])  # ЗАЩИЩЁН
 def delete_news(news_id: int):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
@@ -90,7 +91,7 @@ def delete_news(news_id: int):
     conn.close()
     return {"status": "success"}
 
-@app.get("/")
+@app.get(ENDPOINT)
 def read_root():
     return {"message": "РАБОТАЕТ ЮХУУ ЕЕЕЕЕ"}
 
