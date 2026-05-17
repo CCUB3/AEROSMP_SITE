@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>AERO_ADMIN_PANEL</title>
+    <link rel="icon" href="images/icon.png" type="image/png">
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
+        h2, h3 { border-bottom: 1px solid #0f0; padding-bottom: 5px; text-transform: uppercase; }
+
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+        input, textarea {
+            display: block; width: 100%; background: #111; color: #0f0;
+            border: 1px solid #0f0; margin-bottom: 10px; padding: 5px; font-family: monospace;
+        }
+
+        button {
+            background: #0f0; color: #000; border: none; padding: 10px;
+            font-weight: bold; cursor: pointer; text-transform: uppercase;
+        }
+        button:hover { background: #0c0; }
+
+        .news-item {
+            border: 1px solid #333; padding: 10px; margin-bottom: 5px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .del-btn { background: #a00; color: #fff; padding: 2px 10px; font-size: 12px; }
+        .del-btn:hover { background: #f00; }
+
+        .status { color: #888; font-size: 12px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<h1>AEROSMP // DATABASE_CONTROL</h1>
+
+<div class="container">
+    <!-- СЕКЦИЯ ВВОДА -->
+    <section>
+        <h3>[+] Добавить запись</h3>
+        <form id="adminForm">
+            <input type="text" id="title" placeholder="ЗАГОЛОВОК" required>
+            <textarea id="content" placeholder="ТЕКСТ_СООБЩЕНИЯ" rows="6" required></textarea>
+            <input type="text" id="date" placeholder="ДАТА" required>
+            <button type="submit">ОТПРАВИТЬ_В_БАЗУ</button>
+        </form>
+        <div id="statusMsg" class="status">System: Ready</div>
+    </section>
+
+    <!-- СЕКЦИЯ УПРАВЛЕНИЯ -->
+    <section>
+        <h3>[-] Текущие записи</h3>
+        <div id="newsListAdmin">
+        </div>
+    </section>
+</div>
+
+<script>
+    const API = './api/news';
+
+    // проверка при входе на страницу
+    if (!sessionStorage.getItem('aero_admin_token')) {
+        document.body.innerHTML = '<h1 style="color:red">ДОСТУП ЗАКРЫТ</h1>';
+    }
+
+    // хелпер добавляет токен к любому запросу
+    function authHeaders() {
+        const token = sessionStorage.getItem('aero_admin_token');
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+    }
+
+    // загрузка списка (GET публичный, без токена)
+    async function updateList() {
+        try {
+            const r = await fetch(API);
+            const data = await r.json();
+            const container = document.getElementById('newsListAdmin');
+            container.innerHTML = '';
+
+            data.forEach(n => {
+                const row = document.createElement('div');
+                row.className = 'news-item';
+                row.innerHTML = `
+                <div>[ID:${n.id}] <strong>${n.title}</strong></div>
+                <button class="del-btn" onclick="drop(${n.id})">DELETE</button>
+            `;
+                container.appendChild(row);
+            });
+        } catch (e) { document.getElementById('statusMsg').innerText = "System: Fetch Error"; }
+    }
+
+    // удаление с токеном
+    async function drop(id) {
+        if (confirm(`KILL RECORD ${id}?`)) {
+            await fetch(`${API}/${id}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+            updateList();
+        }
+    }
+
+    // добавление с токеном
+    document.getElementById('adminForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            title: document.getElementById('title').value,
+            content: document.getElementById('content').value,
+            date: document.getElementById('date').value
+        };
+
+        const res = await fetch(API, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            document.getElementById('adminForm').reset();
+            document.getElementById('statusMsg').innerText = "System: Last entry success";
+            updateList();
+        }
+    };
+
+    updateList();
+</script>
+
+</body>
+</html>
