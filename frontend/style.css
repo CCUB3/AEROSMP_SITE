@@ -250,6 +250,7 @@ body {
     line-height: 1;
     letter-spacing: -3px;
     margin-bottom: 20px;
+    gap: 8px;
 }
 
 .hero-title-dark {

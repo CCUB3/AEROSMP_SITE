@@ -4,6 +4,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from jose import jwt, JWTError
+from fastapi.staticfiles import StaticFiles
 import sqlite3
 import os
 
@@ -27,7 +28,6 @@ app.add_middleware(
 )
 
 # ----------- МОДЕЛЬКИ
-
 class PasswordRequest(BaseModel):
     password: str
 
@@ -36,14 +36,17 @@ class NewsItem(BaseModel):
     content: str
     date: str
 
-# ----------- УТИЛИТЫ
+class RuleItem(BaseModel):
+    title: str
+    content: str
+    order_num: int = 0
 
+
+# ----------- УТИЛИТЫ
 def create_token():
-    """Создаём токен. Можно добавить expiry, но пока без него."""
     return jwt.encode({"role": "admin"}, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Эта функция будет вызываться автоматически на защищённых роутах."""
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("role") != "admin":
@@ -51,9 +54,17 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     except JWTError:
         raise HTTPException(status_code=403, detail="токен кривой")
 
-# ------------- РОУТЫ
 
-@app.get(ENDPOINT + "news")  # публичный, без защиты
+# ------------- РОУТЫ: АВТОРИЗАЦИЯ
+@app.post(ENDPOINT + "check_password")
+async def verify_password(data: PasswordRequest):
+    if data.password == SECRET_ADMIN_PASSWORD:
+        return {"status": "ok", "token": create_token()}
+    raise HTTPException(status_code=403, detail="нахуй")
+
+
+# ------------- РОУТЫ: НОВОСТИ
+@app.get(ENDPOINT + "news")
 def get_news():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
@@ -63,18 +74,11 @@ def get_news():
     conn.close()
     return [{"id": r["id"], "title": r["title"], "text": r["content"], "date": r["date"]} for r in rows]
 
-@app.post(ENDPOINT + "check_password")  # публичный, возвращает токен
-async def verify_password(data: PasswordRequest):
-    if data.password == SECRET_ADMIN_PASSWORD:
-        token = create_token()
-        return {"status": "ok", "token": token}  # отдаём токен фронту
-    raise HTTPException(status_code=403, detail="нахуй")
-
-@app.post(ENDPOINT + "news", dependencies=[Depends(verify_token)])  # ЗАЩИЩЁН
+@app.post(ENDPOINT + "news", dependencies=[Depends(verify_token)])
 def add_news(item: NewsItem):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS news 
+    cursor.execute('''CREATE TABLE IF NOT EXISTS news
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT, date TEXT)''')
     cursor.execute("INSERT INTO news (title, content, date) VALUES (?, ?, ?)",
                    (item.title, item.content, item.date))
@@ -82,7 +86,7 @@ def add_news(item: NewsItem):
     conn.close()
     return {"status": "success"}
 
-@app.delete(ENDPOINT + "news/{news_id}", dependencies=[Depends(verify_token)])  # ЗАЩИЩЁН
+@app.delete(ENDPOINT + "news/{news_id}", dependencies=[Depends(verify_token)])
 def delete_news(news_id: int):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
@@ -91,9 +95,60 @@ def delete_news(news_id: int):
     conn.close()
     return {"status": "success"}
 
+
+# ------------- РОУТЫ: ПРАВИЛА (вайбкоооод) !проверено мной!
+@app.get(ENDPOINT + "rules")
+def get_rules():
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM rules ORDER BY order_num ASC, id ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"id": r["id"], "title": r["title"], "content": r["content"], "order_num": r["order_num"]} for r in rows]
+
+@app.post(ENDPOINT + "rules", dependencies=[Depends(verify_token)])
+def add_rule(item: RuleItem):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS rules
+                      (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT, order_num INTEGER DEFAULT 0)''')
+    cursor.execute("INSERT INTO rules (title, content, order_num) VALUES (?, ?, ?)",
+                   (item.title, item.content, item.order_num))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+@app.put(ENDPOINT + "rules/{rule_id}", dependencies=[Depends(verify_token)])
+def update_rule(rule_id: int, item: RuleItem):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    result = cursor.execute(
+        "UPDATE rules SET title = ?, content = ?, order_num = ? WHERE id = ?",
+        (item.title, item.content, item.order_num, rule_id)
+    )
+    conn.commit()
+    conn.close()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Правило не найдено")
+    return {"status": "success"}
+
+@app.delete(ENDPOINT + "rules/{rule_id}", dependencies=[Depends(verify_token)])
+def delete_rule(rule_id: int):
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM rules WHERE id = ?", (rule_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+
+# ------------- СЛУЖЕБНЫЙ
 @app.get(ENDPOINT)
 def read_root():
     return {"message": "РАБОТАЕТ ЮХУУ ЕЕЕЕЕ"}
+
+app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn

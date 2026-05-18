@@ -6,127 +6,568 @@
     <link rel="icon" href="images/icon.png" type="image/png">
     <style>
         body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
-        h2, h3 { border-bottom: 1px solid #0f0; padding-bottom: 5px; text-transform: uppercase; }
+        h1, h2, h3 { border-bottom: 1px solid #0f0; padding-bottom: 5px; text-transform: uppercase; }
 
-        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-
-        input, textarea {
-            display: block; width: 100%; background: #111; color: #0f0;
-            border: 1px solid #0f0; margin-bottom: 10px; padding: 5px; font-family: monospace;
+        /* ОБЩАЯ СЕТКА */
+        .section-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
         }
 
+        input, textarea, select {
+            display: block;
+            width: 100%;
+            background: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+            margin-bottom: 10px;
+            padding: 5px;
+            font-family: monospace;
+            box-sizing: border-box;
+        }
+
+        textarea { resize: vertical; }
+
         button {
-            background: #0f0; color: #000; border: none; padding: 10px;
-            font-weight: bold; cursor: pointer; text-transform: uppercase;
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: monospace;
         }
         button:hover { background: #0c0; }
 
-        .news-item {
-            border: 1px solid #333; padding: 10px; margin-bottom: 5px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .del-btn { background: #a00; color: #fff; padding: 2px 10px; font-size: 12px; }
-        .del-btn:hover { background: #f00; }
+        .btn-danger { background: #a00; color: #fff; }
+        .btn-danger:hover { background: #f00; }
 
-        .status { color: #888; font-size: 12px; margin-top: 10px; }
+        .btn-warn { background: #880; color: #000; }
+        .btn-warn:hover { background: #aa0; }
+
+        .btn-sm { padding: 2px 10px; font-size: 12px; }
+
+        /* СПИСКИ ЗАПИСЕЙ */
+        .record-item {
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .record-title {
+            flex: 1;
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .record-meta {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* ФОРМА ПРАВИЛ */
+        .rules-form-section {
+            border: 1px solid #0f0;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .edit-mode-indicator {
+            background: #880;
+            color: #000;
+            padding: 4px 10px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            display: none;
+            font-weight: bold;
+        }
+
+        .edit-mode-indicator.visible { display: block; }
+
+        /* ПРЕВЬЮ */
+        .preview-panel {
+            border: 1px solid #333;
+            padding: 15px;
+            margin-top: 10px;
+            background: #0a0a0a;
+            display: none;
+            font-size: 13px;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .preview-panel.visible { display: block; }
+        .preview-panel b { color: #0f0; }
+        .preview-panel i { color: #888; }
+        .preview-panel a { color: #09f; }
+        .preview-panel ul { padding-left: 20px; }
+        .preview-panel li { margin-bottom: 4px; }
+
+        /* ПРАВИЛО В СПИСКЕ */
+        .rule-order-badge {
+            background: #030;
+            color: #0f0;
+            padding: 1px 6px;
+            font-size: 11px;
+            border: 1px solid #0f0;
+            margin-right: 8px;
+        }
+
+        /* СТАТУС */
+        .status {
+            font-size: 12px;
+            margin-top: 10px;
+            padding: 5px;
+            border-left: 2px solid #0f0;
+        }
+        .status.ok { color: #0f0; border-color: #0f0; }
+        .status.err { color: #f00; border-color: #f00; }
+        .status.warn { color: #ff0; border-color: #ff0; }
+
+        /* ЗАГОЛОВОК СЕКЦИИ */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        h3 { margin-bottom: 0; border: none; font-size: 14px; }
+        .section-divider {
+            border: none;
+            border-top: 1px solid #0f0;
+            margin: 40px 0;
+        }
+
+        .hint {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        /* ДРАГ РЕКОРДЕР */
+        .drag-handle {
+            cursor: grab;
+            color: #333;
+            margin-right: 8px;
+            user-select: none;
+        }
+        .drag-handle:hover { color: #0f0; }
+        .record-item.dragging { opacity: 0.4; border-color: #0f0; }
+        .record-item.drag-over { border-color: #ff0; border-style: dashed; }
     </style>
 </head>
 <body>
 
 <h1>AEROSMP // DATABASE_CONTROL</h1>
 
-<div class="container">
-    <!-- СЕКЦИЯ ВВОДА -->
+<!-- ------------------- НОВОСТИ -->
+<h2 style="margin-top: 30px;">[NEWS_MODULE]</h2>
+<div class="section-grid">
+
     <section>
-        <h3>[+] Добавить запись</h3>
-        <form id="adminForm">
-            <input type="text" id="title" placeholder="ЗАГОЛОВОК" required>
-            <textarea id="content" placeholder="ТЕКСТ_СООБЩЕНИЯ" rows="6" required></textarea>
-            <input type="text" id="date" placeholder="ДАТА" required>
+        <h3>[+] Добавить новость</h3>
+        <br>
+        <form id="newsForm">
+            <input type="text" id="newsTitle" placeholder="ЗАГОЛОВОК" required>
+            <textarea id="newsContent" placeholder="ТЕКСТ_СООБЩЕНИЯ" rows="6" required></textarea>
+            <input type="text" id="newsDate" placeholder="ДАТА (например: 3 мая)" required>
             <button type="submit">ОТПРАВИТЬ_В_БАЗУ</button>
         </form>
-        <div id="statusMsg" class="status">System: Ready</div>
+        <div id="newsStatus" class="status">System: Ready</div>
     </section>
 
-    <!-- СЕКЦИЯ УПРАВЛЕНИЯ -->
     <section>
-        <h3>[-] Текущие записи</h3>
-        <div id="newsListAdmin">
-        </div>
+        <h3>[-] Текущие новости</h3>
+        <br>
+        <div id="newsListAdmin"></div>
     </section>
 </div>
 
-<script>
-    const API = './api/news';
+<hr class="section-divider">
 
-    // проверка при входе на страницу
+<!-- --------------------------- ПРАВИЛА -->
+<h2>[RULES_MODULE]</h2>
+<br>
+
+<div class="section-grid">
+
+    <!-- ЛЕВАЯ КОЛОНКА: ФОРМА ДОБАВЛЕНИЯ/РЕДАКТИРОВАНИЯ -->
+    <section>
+        <div class="rules-form-section">
+            <div id="editModeIndicator" class="edit-mode-indicator">
+                ⚠ РЕЖИМ РЕДАКТИРОВАНИЯ — [ID: <span id="editRuleId">?</span>]
+            </div>
+
+            <input type="hidden" id="ruleEditId" value="">
+
+            <input type="text" id="ruleTitle" placeholder="ЗАГОЛОВОК_БЛОКА" required>
+
+            <div class="hint">
+                Содержимое HTML. теги: &lt;p&gt;, &lt;b&gt;, &lt;i&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a&gt;, &lt;br&gt;
+            </div>
+            <textarea id="ruleContent" placeholder="&lt;p&gt;&lt;b&gt;1.1.&lt;/b&gt; Текст правила...&lt;/p&gt;" rows="12" oninput="updatePreview()"></textarea>
+
+            <input type="number" id="ruleOrder" placeholder="ПОРЯДОК (0 = первый)" value="0" min="0">
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="submitRule()">СОХРАНИТЬ</button>
+                <button class="btn-warn" onclick="togglePreview()">ПРЕВЬЮ</button>
+                <button class="btn-danger" onclick="cancelEdit()" id="cancelEditBtn" style="display:none;">✕ ОТМЕНА</button>
+            </div>
+        </div>
+
+        <div id="rulePreview" class="preview-panel"></div>
+
+        <div id="rulesStatus" class="status">System: Ready</div>
+    </section>
+
+    <!-- ПРАВАЯ КОЛОНКА: СПИСОК ПРАВИЛ -->
+    <section>
+        <div class="section-header">
+            <h3>[-] Текущие блоки правил</h3>
+            <button class="btn-warn" style="padding: 4px 12px; font-size: 11px;" onclick="loadRules()">↺ ОБНОВИТЬ</button>
+        </div>
+        <div class="hint" style="margin-top: 10px;">
+            Перетащи блоки для изменения порядка, затем нажми СОХРАНИТЬ_ПОРЯДОК
+        </div>
+        <div id="rulesListAdmin"></div>
+        <button onclick="saveOrder()" style="margin-top: 10px; width: 100%;">↕ СОХРАНИТЬ_ПОРЯДОК</button>
+    </section>
+</div>
+
+
+<!-- ------------------ СКРИПТЫ -->
+<script>
+    const NEWS_API  = './api/news';
+    const RULES_API = './api/rules';
+
+    // ПРОВЕРКА ДОСТУПА
     if (!sessionStorage.getItem('aero_admin_token')) {
-        document.body.innerHTML = '<h1 style="color:red">ДОСТУП ЗАКРЫТ</h1>';
+        document.body.innerHTML = '<h1 style="color:red;font-family:monospace">ДОСТУП ЗАКРЫТ</h1>';
     }
 
-    // хелпер добавляет токен к любому запросу
     function authHeaders() {
-        const token = sessionStorage.getItem('aero_admin_token');
         return {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${sessionStorage.getItem('aero_admin_token')}`
         };
     }
 
-    // загрузка списка (GET публичный, без токена)
-    async function updateList() {
+    function setStatus(elemId, text, type = 'ok') {
+        const el = document.getElementById(elemId);
+        el.textContent = text;
+        el.className = `status ${type}`;
+    }
+
+
+    // ----------------- НОВОСТИ
+
+    async function loadNews() {
         try {
-            const r = await fetch(API);
+            const r = await fetch(NEWS_API);
             const data = await r.json();
             const container = document.getElementById('newsListAdmin');
             container.innerHTML = '';
-
+            if (data.length === 0) {
+                container.innerHTML = '<div style="color:#666;font-size:12px;">Новостей нет</div>';
+                return;
+            }
             data.forEach(n => {
                 const row = document.createElement('div');
-                row.className = 'news-item';
+                row.className = 'record-item';
                 row.innerHTML = `
-                <div>[ID:${n.id}] <strong>${n.title}</strong></div>
-                <button class="del-btn" onclick="drop(${n.id})">DELETE</button>
-            `;
+                    <div class="record-header">
+                        <div class="record-title">${n.title}</div>
+                        <div class="record-actions">
+                            <button class="btn-danger btn-sm" onclick="deleteNews(${n.id})">DELETE</button>
+                        </div>
+                    </div>
+                    <div class="record-meta">[ID:${n.id}] ${n.date}</div>
+                `;
                 container.appendChild(row);
             });
-        } catch (e) { document.getElementById('statusMsg').innerText = "System: Fetch Error"; }
-    }
-
-    // удаление с токеном
-    async function drop(id) {
-        if (confirm(`KILL RECORD ${id}?`)) {
-            await fetch(`${API}/${id}`, {
-                method: 'DELETE',
-                headers: authHeaders()
-            });
-            updateList();
+        } catch (e) {
+            setStatus('newsStatus', 'System: Fetch Error', 'err');
         }
     }
 
-    // добавление с токеном
-    document.getElementById('adminForm').onsubmit = async (e) => {
+    async function deleteNews(id) {
+        if (!confirm(`KILL NEWS RECORD ${id}?`)) return;
+        await fetch(`${NEWS_API}/${id}`, { method: 'DELETE', headers: authHeaders() });
+        loadNews();
+    }
+
+    document.getElementById('newsForm').onsubmit = async (e) => {
         e.preventDefault();
         const payload = {
-            title: document.getElementById('title').value,
-            content: document.getElementById('content').value,
-            date: document.getElementById('date').value
+            title:   document.getElementById('newsTitle').value,
+            content: document.getElementById('newsContent').value,
+            date:    document.getElementById('newsDate').value
         };
-
-        const res = await fetch(API, {
+        const res = await fetch(NEWS_API, {
             method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            document.getElementById('newsForm').reset();
+            setStatus('newsStatus', 'System: News added OK', 'ok');
+            loadNews();
+        } else {
+            setStatus('newsStatus', 'System: Error ' + res.status, 'err');
+        }
+    };
+
+
+    // -------------- ПРАВИЛА
+
+    // ---------- загрузка списка
+    async function loadRules() {
+        try {
+            const r = await fetch(RULES_API);
+            const data = await r.json();
+            renderRulesList(data);
+        } catch (e) {
+            setStatus('rulesStatus', 'System: Fetch Rules Error', 'err');
+        }
+    }
+
+    function renderRulesList(rules) {
+        const container = document.getElementById('rulesListAdmin');
+        container.innerHTML = '';
+        if (rules.length === 0) {
+            container.innerHTML = '<div style="color:#666;font-size:12px;">Правил нет. Добавь первый блок!</div>';
+            return;
+        }
+
+        rules.forEach(rule => {
+            const row = document.createElement('div');
+            row.className = 'record-item';
+            row.dataset.id = rule.id;
+            row.dataset.order = rule.order_num;
+            row.draggable = true;
+
+            row.innerHTML = `
+                <div class="record-header">
+                    <span class="drag-handle" title="Перетащи для сортировки">⠿</span>
+                    <span class="rule-order-badge">${rule.order_num}</span>
+                    <div class="record-title">${rule.title}</div>
+                    <div class="record-actions">
+                        <button class="btn-warn btn-sm" onclick="editRule(${rule.id}, ${JSON.stringify(rule.title).replace(/"/g, '&quot;')}, ${JSON.stringify(rule.content).replace(/"/g, '&quot;')}, ${rule.order_num})">EDIT</button>
+                        <button class="btn-danger btn-sm" onclick="deleteRule(${rule.id})">DEL</button>
+                    </div>
+                </div>
+            `;
+
+            // drag & drop
+            row.addEventListener('dragstart', onDragStart);
+            row.addEventListener('dragover',  onDragOver);
+            row.addEventListener('dragleave', onDragLeave);
+            row.addEventListener('drop',      onDrop);
+            row.addEventListener('dragend',   onDragEnd);
+
+            container.appendChild(row);
+        });
+    }
+
+    // ----------- добавить / сохранить
+    async function submitRule() {
+        const editId  = document.getElementById('ruleEditId').value;
+        const title   = document.getElementById('ruleTitle').value.trim();
+        const content = document.getElementById('ruleContent').value.trim();
+        const order   = parseInt(document.getElementById('ruleOrder').value) || 0;
+
+        if (!title || !content) {
+            setStatus('rulesStatus', 'System: Пиши хоть чот!', 'warn');
+            return;
+        }
+
+        const payload = { title, content, order_num: order };
+        const isEdit  = editId !== '';
+        const url     = isEdit ? `${RULES_API}/${editId}` : RULES_API;
+        const method  = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
             headers: authHeaders(),
             body: JSON.stringify(payload)
         });
 
         if (res.ok) {
-            document.getElementById('adminForm').reset();
-            document.getElementById('statusMsg').innerText = "System: Last entry success";
-            updateList();
+            setStatus('rulesStatus', `System: Rule ${isEdit ? 'updated' : 'added'} OK`, 'ok');
+            cancelEdit();
+            loadRules();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            setStatus('rulesStatus', `System: Error ${res.status} — ${err.detail || ''}`, 'err');
         }
-    };
+    }
 
-    updateList();
+    // ---------- форму для редактирования
+    function editRule(id, title, content, order) {
+        document.getElementById('ruleEditId').value     = id;
+        document.getElementById('ruleTitle').value      = title;
+        document.getElementById('ruleContent').value    = content;
+        document.getElementById('ruleOrder').value      = order;
+        document.getElementById('editRuleId').textContent = id;
+        document.getElementById('editModeIndicator').classList.add('visible');
+        document.getElementById('cancelEditBtn').style.display = 'inline-block';
+        updatePreview();
+        document.getElementById('ruleTitle').scrollIntoView({ behavior: 'smooth' });
+        setStatus('rulesStatus', `System: Editing rule ID ${id}`, 'warn');
+    }
+
+    // ------------- сбросить форму
+    function cancelEdit() {
+        document.getElementById('ruleEditId').value = '';
+        document.getElementById('ruleTitle').value  = '';
+        document.getElementById('ruleContent').value = '';
+        document.getElementById('ruleOrder').value   = '0';
+        document.getElementById('editModeIndicator').classList.remove('visible');
+        document.getElementById('cancelEditBtn').style.display = 'none';
+        document.getElementById('rulePreview').classList.remove('visible');
+        setStatus('rulesStatus', 'System: Ready', 'ok');
+    }
+
+    // ------------- удалить
+    async function deleteRule(id) {
+        if (!confirm(`KILL RULE BLOCK ${id}?\n\nЭто действие необратимо.`)) return;
+        const res = await fetch(`${RULES_API}/${id}`, {
+            method: 'DELETE',
+            headers: authHeaders()
+        });
+        if (res.ok) {
+            setStatus('rulesStatus', `System: Rule ${id} deleted`, 'ok');
+            loadRules();
+        } else {
+            setStatus('rulesStatus', 'System: Delete Error', 'err');
+        }
+    }
+
+    // ---------- сохранить порядок
+    async function saveOrder() {
+        const items = document.querySelectorAll('#rulesListAdmin .record-item');
+        const updates = [];
+
+        items.forEach((item, index) => {
+            updates.push({ id: parseInt(item.dataset.id), order_num: index });
+        });
+
+        setStatus('rulesStatus', 'System: Saving order...', 'warn');
+
+        const r = await fetch(RULES_API);
+        const allRules = await r.json();
+        const rulesMap = {};
+        allRules.forEach(rule => rulesMap[rule.id] = rule);
+
+        let hasError = false;
+        for (const upd of updates) {
+            const rule = rulesMap[upd.id];
+            if (!rule) continue;
+            const res = await fetch(`${RULES_API}/${upd.id}`, {
+                method: 'PUT',
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    title:     rule.title,
+                    content:   rule.content,
+                    order_num: upd.order_num
+                })
+            });
+            if (!res.ok) { hasError = true; break; }
+        }
+
+        if (hasError) {
+            setStatus('rulesStatus', 'System: Order save ERROR', 'err');
+        } else {
+            setStatus('rulesStatus', 'System: Order saved OK', 'ok');
+            loadRules();
+        }
+    }
+
+    // -------- превью HTML
+    function updatePreview() {
+        const html = document.getElementById('ruleContent').value;
+        document.getElementById('rulePreview').innerHTML = html || '<span style="color:#666">Превью появится здесь...</span>';
+    }
+
+    function togglePreview() {
+        const panel = document.getElementById('rulePreview');
+        panel.classList.toggle('visible');
+        if (panel.classList.contains('visible')) updatePreview();
+    }
+
+
+    //          DRAG & DROP (сортировка)
+    let dragSrc = null;
+
+    function onDragStart(e) {
+        dragSrc = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function onDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (this !== dragSrc) this.classList.add('drag-over');
+    }
+
+    function onDragLeave() {
+        this.classList.remove('drag-over');
+    }
+
+    function onDrop(e) {
+        e.stopPropagation();
+        if (this === dragSrc) return;
+
+        const container = document.getElementById('rulesListAdmin');
+        const items = [...container.querySelectorAll('.record-item')];
+        const srcIdx  = items.indexOf(dragSrc);
+        const destIdx = items.indexOf(this);
+
+        if (srcIdx < destIdx) {
+            container.insertBefore(dragSrc, this.nextSibling);
+        } else {
+            container.insertBefore(dragSrc, this);
+        }
+
+        this.classList.remove('drag-over');
+    }
+
+    function onDragEnd() {
+        document.querySelectorAll('.record-item').forEach(el => {
+            el.classList.remove('dragging', 'drag-over');
+        });
+        dragSrc = null;
+        setStatus('rulesStatus', 'System: Порядок изменён — нажми СОХРАНИТЬ_ПОРЯДОК', 'warn');
+    }
+
+
+    //           ИНИЦИАЛИЗАЦИЯ
+    loadNews();
+    loadRules();
 </script>
 
 </body>
