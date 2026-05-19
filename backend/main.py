@@ -12,7 +12,7 @@ load_dotenv()
 
 app = FastAPI()
 
-ENDPOINT = ("/api/")
+ENDPOINT = ("/")
 SECRET_ADMIN_PASSWORD = os.getenv("SECRET_ADMIN_PASSWORD")
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
@@ -148,7 +148,6 @@ def delete_rule(rule_id: int):
 def read_root():
     return {"message": "РАБОТАЕТ ЮХУУ ЕЕЕЕЕ"}
 
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
