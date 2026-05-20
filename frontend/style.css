@@ -920,13 +920,9 @@ body {
 
 /* ОБЪЕДИНЕННЫЙ МЕДИА-ЗАПРОС ДЛЯ ТЕЛЕФОНОВ */
 @media (max-width: 768px) {
-    /* шапка */
-    .main-header { width: 90%; }
-    .header-container { padding: 12px 15px; }
-    .main-header.scrolled .header-container { padding: 10px 15px; }
-    .main-header nav { gap: 15px; flex-wrap: wrap; }
-    .main-header nav a { font-size: 0.8rem; }
-    .logo-text { display: none; }
+    .main-header {
+        display: none;
+    }
 
     /* герой */
     .hero-section {
@@ -989,4 +985,101 @@ body {
 
     /* модалка */
     .modal-close { top: 15px; right: 20px; font-size: 45px; }
+}
+
+/* -------------- ПРЕЛОАДЕР */
+#preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #E8F5FD;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+#preloader.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.square-loader-fixed {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    margin-bottom: 20px;
+    border: none;
+}
+
+.square-loader-fixed .side {
+    position: absolute;
+    background: rgba(2, 89, 222, 0.15);
+    animation: light_up 1s ease infinite;
+}
+
+/* ВЕРХНЯЯ */
+.square-loader-fixed .side.top {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+}
+
+/* ПРАВАЯ */
+.square-loader-fixed .side.right {
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 100%;
+    animation-delay: 0.25s;
+}
+
+/* НИЖНЯЯ */
+.square-loader-fixed .side.bottom {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    animation-delay: 0.5s;
+}
+
+/* ЛЕВАЯ */
+.square-loader-fixed .side.left {
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    animation-delay: 0.75s;
+}
+
+/* АНИМАЦИЯ */
+@keyframes light_up {
+    0%, 100% {
+        background: rgba(2, 89, 222, 0.15);
+    }
+    1%, 20% {
+        background: var(--color-5);
+    }
+    21% {
+        background: rgba(2, 89, 222, 0.15);
+    }
+}
+
+.loading-text {
+    color: var(--color-5);
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: pulse-text 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
